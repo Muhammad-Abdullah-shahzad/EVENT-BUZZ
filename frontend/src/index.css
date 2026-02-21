@@ -463,11 +463,21 @@ h6 {
   box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
 }
 
-[data-theme='dark'] .btn-primary-custom {
-  background: linear-gradient(135deg, var(--primary), #4f46e5);
-}
-
 [data-theme='dark'] .btn-primary-custom:hover {
   background: linear-gradient(135deg, #2563eb, #6366f1);
   box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+}
+
+/* Placeholder Utilities */
+.placeholder-light::placeholder {
+  color: rgba(255, 255, 255, 0.8) !important;
+  opacity: 1;
+}
+
+[data-theme='dark'] .form-control::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.placeholder-dark::placeholder {
+  color: rgba(15, 23, 42, 0.6) !important;
 }
