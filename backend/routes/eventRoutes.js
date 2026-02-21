@@ -7,10 +7,18 @@ const {
     deleteEvent,
     updateEvent,
     getOrganizerEvents,
+    approveEvent,
+    rejectEvent,
+    getPendingEvents,
 } = require('../controllers/eventController');
-const { protect, organizer } = require('../middleware/authMiddleware');
+const { protect, organizer, admin } = require('../middleware/authMiddleware');
 
-// MUST BE FIRST to avoid being caught by /:id
+// Admin Routes (MUST BE BEFORE /:id)
+router.get('/admin/pending', protect, admin, getPendingEvents);
+router.put('/:id/approve', protect, admin, approveEvent);
+router.put('/:id/reject', protect, admin, rejectEvent);
+
+// Organizer Routes
 router.get('/organizer/my-events', protect, organizer, getOrganizerEvents);
 
 router.route('/')

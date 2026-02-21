@@ -1,6 +1,7 @@
 const Booking = require('../models/Booking');
 const Event = require('../models/Event');
 const QRCode = require('qrcode');
+const { createNotification } = require('../utils/notificationUtils');
 
 // @desc    Create new booking
 // @route   POST /api/bookings
@@ -54,10 +55,27 @@ const createBooking = async (req, res) => {
 
         // Increment ticketsSold ONLY for free events
         if (!event.isPaid) {
-            console.log('Free event, incrementing tickets sold');
             event.ticketsSold += Number(tickets);
             await event.save();
         }
+
+        // Create notification for booking success (Attendee)
+        await createNotification(
+            req.user._id,
+            'Booking Confirmed!',
+            `You have successfully booked ${tickets} ticket(s) for ${event.title}.`,
+            'booking',
+            event._id
+        );
+
+        // Notify Organizer
+        await createNotification(
+            event.user, // Event owner
+            'New Ticket Booking!',
+            `${req.user.name} just booked ${tickets} ticket(s) for your event: ${event.title}`,
+            'booking',
+            event._id
+        );
 
         res.status(201).json(createdBooking);
     } catch (error) {

@@ -1,4 +1,7 @@
 const Event = require('../models/Event');
+const Booking = require('../models/Booking');
+const User = require('../models/User');
+const { createNotification } = require('../utils/notificationUtils');
 
 // @desc    Get all events
 // @route   GET /api/events
@@ -14,8 +17,15 @@ const getEvents = async (req, res) => {
             }
             : {};
 
-        const { category, minPrice, maxPrice, date, lat, lng, distance } = req.query;
+        const { category, minPrice, maxPrice, date, lat, lng, distance, status } = req.query;
         let filters = { ...keyword };
+
+        // Strictly enforce approved events for public. Only admins can view pending via status filter.
+        if (status && req.user && req.user.role === 'admin') {
+            filters.status = status;
+        } else {
+            filters.status = 'approved';
+        }
 
         if (category && category !== 'All') {
             filters.category = category;
@@ -62,9 +72,18 @@ const getEvents = async (req, res) => {
 // @access  Public
 const getEventById = async (req, res) => {
     try {
-        const event = await Event.findById(req.params.id).populate('user', 'name');
+        const event = await Event.findById(req.params.id).populate('user', 'name email');
 
         if (event) {
+            // If event is not approved, only let admin or owner see it
+            if (event.status !== 'approved') {
+                // We need to check if user is authenticated and authorized
+                // But this route is public. Let's see if we can get user from token if present.
+                // For simplicity, if it's public and not approved, return 404.
+                // The organizer has their own dashboard to view their events.
+                res.status(404);
+                throw new Error('Event not found or pending approval');
+            }
             res.json(event);
         } else {
             res.status(404);
@@ -93,6 +112,8 @@ const createEvent = async (req, res) => {
     } = req.body;
 
     try {
+        const eventStatus = (req.user.role && req.user.role.toLowerCase() === 'admin') ? 'approved' : 'pending';
+
         const event = new Event({
             user: req.user._id,
             title,
@@ -105,10 +126,26 @@ const createEvent = async (req, res) => {
             ticketPrice,
             capacity,
             image,
-            isPaid: ticketPrice > 0
+            isPaid: ticketPrice > 0,
+            status: eventStatus
         });
 
         const createdEvent = await event.save();
+
+        // Notify admins if it's an organizer creating an event
+        if (req.user.role === 'organizer') {
+            const admins = await User.find({ role: 'admin' });
+            for (const admin of admins) {
+                await createNotification(
+                    admin._id,
+                    'Event Approval Required',
+                    `New event "${createdEvent.title}" requires your approval.`,
+                    'system',
+                    createdEvent._id
+                );
+            }
+        }
+
         res.status(201).json(createdEvent);
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -129,8 +166,20 @@ const deleteEvent = async (req, res) => {
                 throw new Error('Not authorized to delete this event');
             }
 
+            // Notify all attendees about cancellation
+            const bookings = await Booking.find({ event: event._id });
+            for (const booking of bookings) {
+                await createNotification(
+                    booking.user,
+                    'Event Cancelled!',
+                    `We regret to inform you that "${event.title}" has been cancelled.`,
+                    'update',
+                    null
+                );
+            }
+
             await event.deleteOne();
-            res.json({ message: 'Event removed' });
+            res.json({ message: 'Event removed and attendees notified' });
         } else {
             res.status(404);
             throw new Error('Event not found');
@@ -145,26 +194,7 @@ const deleteEvent = async (req, res) => {
 // @access  Private/Organizer
 const getOrganizerEvents = async (req, res) => {
     try {
-        const fs = require('fs');
-        const logFile = './debug_local.log';
-        fs.appendFileSync(logFile, `Hit getOrganizerEvents for ${req.user?._id}\n`);
-
         const events = await Event.find({ user: req.user._id }).sort({ date: 1 });
-
-        if (events.length === 0) {
-            fs.appendFileSync(logFile, `Returning mock event\n`);
-            return res.json([{
-                _id: 'mock_debug_123',
-                title: 'DEBUG: Connection Working',
-                category: 'Test',
-                date: new Date(),
-                venue: 'Local Server',
-                ticketsSold: 0,
-                capacity: 100,
-                image: 'https://via.placeholder.com/40'
-            }]);
-        }
-
         res.json(events);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -185,6 +215,9 @@ const updateEvent = async (req, res) => {
                 throw new Error('Not authorized to update this event');
             }
 
+            const dateChanged = req.body.date && new Date(req.body.date).getTime() !== new Date(event.date).getTime();
+            const venueChanged = req.body.venue && req.body.venue !== event.venue;
+
             event.title = req.body.title || event.title;
             event.description = req.body.description || event.description;
             event.category = req.body.category || event.category;
@@ -196,7 +229,27 @@ const updateEvent = async (req, res) => {
             event.image = req.body.image || event.image;
             event.isPaid = event.ticketPrice > 0;
 
+            // Reset status to pending if updated by an organizer (require re-approval)
+            // Admins can maintain approved status
+            if (req.user.role !== 'admin') {
+                event.status = 'pending';
+            }
+
             const updatedEvent = await event.save();
+
+            if (dateChanged || venueChanged) {
+                const bookings = await Booking.find({ event: event._id });
+                for (const booking of bookings) {
+                    await createNotification(
+                        booking.user,
+                        'Event Updated!',
+                        `"${event.title}" has been updated. New ${dateChanged ? 'Date: ' + new Date(event.date).toLocaleDateString() : ''} ${venueChanged ? 'Venue: ' + event.venue : ''}`,
+                        'update',
+                        event._id
+                    );
+                }
+            }
+
             res.json(updatedEvent);
         } else {
             res.status(404);
@@ -207,6 +260,92 @@ const updateEvent = async (req, res) => {
     }
 };
 
+// @desc    Approve event
+// @route   PUT /api/events/:id/approve
+// @access  Private/Admin
+const approveEvent = async (req, res) => {
+    try {
+        const event = await Event.findById(req.params.id);
+
+        if (event) {
+            event.status = 'approved';
+            const updatedEvent = await event.save();
+
+            // Notify organizer
+            await createNotification(
+                event.user,
+                'Event Approved!',
+                `Your event "${event.title}" has been approved and is now live.`,
+                'system',
+                event._id
+            );
+
+            // Notify all regular users about new approved event
+            const users = await User.find({ role: 'user' });
+            for (const user of users) {
+                await createNotification(
+                    user._id,
+                    'New Event Alert!',
+                    `A new event "${event.title}" has been posted in ${event.category}. Check it out!`,
+                    'reminder',
+                    event._id
+                );
+            }
+
+            res.json(updatedEvent);
+        } else {
+            res.status(404);
+            throw new Error('Event not found');
+        }
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+// @desc    Reject event
+// @route   PUT /api/events/:id/reject
+// @access  Private/Admin
+const rejectEvent = async (req, res) => {
+    try {
+        const { reason } = req.body;
+        const event = await Event.findById(req.params.id);
+
+        if (event) {
+            event.status = 'rejected';
+            event.rejectionReason = reason;
+            const updatedEvent = await event.save();
+
+            // Notify organizer
+            await createNotification(
+                event.user,
+                'Event Rejected',
+                `Your event "${event.title}" was not approved. ${reason ? 'Reason: ' + reason : ''}`,
+                'system',
+                event._id
+            );
+
+            res.json(updatedEvent);
+        } else {
+            res.status(404);
+            throw new Error('Event not found');
+        }
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+// @desc    Get pending events
+// @route   GET /api/events/admin/pending
+// @access  Private/Admin
+const getPendingEvents = async (req, res) => {
+    try {
+        const events = await Event.find({ status: 'pending' }).populate('user', 'name email');
+        res.json(events);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getEvents,
     getEventById,
@@ -214,4 +353,7 @@ module.exports = {
     deleteEvent,
     updateEvent,
     getOrganizerEvents,
+    approveEvent,
+    rejectEvent,
+    getPendingEvents,
 };

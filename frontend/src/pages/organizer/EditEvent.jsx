@@ -235,9 +235,9 @@ const EditEvent = () => {
                                         <h6 className="fw-bold mb-3"><HiOutlineTicket className="text-primary me-2" />Ticketing Changes</h6>
                                         <Row className="g-3">
                                             <Col md={6}>
-                                                <Form.Label className="small text-muted">PRICE ($)</Form.Label>
+                                                <Form.Label className="small text-muted">PRICE (Rs.)</Form.Label>
                                                 <InputGroup>
-                                                    <InputGroup.Text className="bg-white border-0">$</InputGroup.Text>
+                                                    <InputGroup.Text className="bg-white border-0">Rs.</InputGroup.Text>
                                                     <Form.Control
                                                         type="number"
                                                         name="ticketPrice"

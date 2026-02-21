@@ -54,7 +54,9 @@ const CreateEvent = () => {
         setError('');
         try {
             await eventService.createEvent(formData);
-            navigate('/organizer/dashboard', { state: { message: 'Event published successfully!' } });
+            navigate('/organizer/dashboard', {
+                state: { message: 'Event submitted successfully! It will be visible to users once approved by an admin.' }
+            });
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to create event. Please check your inputs.');
         } finally {
@@ -193,9 +195,9 @@ const CreateEvent = () => {
                                         <h6 className="fw-bold mb-3"><HiOutlineTicket className="text-primary me-2" />Ticketing & Capacity</h6>
                                         <Row className="g-3">
                                             <Col md={6}>
-                                                <Form.Label className="small text-muted">PRICE (SET 0 FOR FREE)</Form.Label>
+                                                <Form.Label className="small text-muted">PRICE (IN RUPEES, 0 FOR FREE)</Form.Label>
                                                 <InputGroup>
-                                                    <InputGroup.Text className="bg-white border-0">$</InputGroup.Text>
+                                                    <InputGroup.Text className="bg-white border-0">Rs.</InputGroup.Text>
                                                     <Form.Control
                                                         type="number"
                                                         name="ticketPrice"

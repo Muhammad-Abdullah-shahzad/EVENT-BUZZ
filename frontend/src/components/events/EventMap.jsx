@@ -59,7 +59,7 @@ const EventMap = ({ events = [], center = [31.5204, 74.3587], zoom = 12 }) => {
                                     <h6 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: '600' }}>{event.title}</h6>
                                     <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b' }}>{event.venue}</p>
                                     <p style={{ margin: '0', fontSize: '12px', color: '#1e3a8a', fontWeight: '600' }}>
-                                        {event.isPaid ? `$${event.ticketPrice}` : 'Free'}
+                                        {event.isPaid ? `Rs. ${event.ticketPrice}` : 'Free'}
                                     </p>
                                 </div>
                             </div>

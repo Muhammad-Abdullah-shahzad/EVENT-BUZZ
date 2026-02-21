@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const { generateAccessToken, generateRefreshToken } = require('../utils/tokenUtils');
+const { createNotification } = require('../utils/notificationUtils');
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -25,6 +26,17 @@ const registerUser = async (req, res) => {
         if (user) {
             const accessToken = generateAccessToken(user._id);
             const refreshToken = generateRefreshToken(user._id);
+
+            // Notify admins and organizers about new user
+            const adminsAndOrganizers = await User.find({ role: { $in: ['admin', 'organizer'] } });
+            for (const staff of adminsAndOrganizers) {
+                await createNotification(
+                    staff._id,
+                    'New User Registered',
+                    `${user.name} (${user.role}) has just joined Event Buzz!`,
+                    'system'
+                );
+            }
 
             res.status(201).json({
                 _id: user._id,

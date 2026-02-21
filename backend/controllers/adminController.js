@@ -8,7 +8,8 @@ const Booking = require('../models/Booking');
 const getStats = async (req, res) => {
     try {
         const usersCount = await User.countDocuments();
-        const eventsCount = await Event.countDocuments();
+        const eventsCount = await Event.countDocuments({ status: 'approved' }); // Only approved events are "live"
+        const pendingEventsCount = await Event.countDocuments({ status: 'pending' });
         const bookingsCount = await Booking.countDocuments();
 
         // Calculate total revenue from completed payments only
@@ -18,6 +19,7 @@ const getStats = async (req, res) => {
         res.json({
             users: usersCount,
             events: eventsCount,
+            pendingEvents: pendingEventsCount,
             bookings: bookingsCount,
             revenue: totalRevenue
         });

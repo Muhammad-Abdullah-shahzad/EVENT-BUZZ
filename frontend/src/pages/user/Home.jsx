@@ -148,16 +148,15 @@ const Home = () => {
                     {/* Category Filter */}
                     <div className="d-flex flex-wrap gap-2 mb-5 justify-content-center">
                         {categories.map((cat) => (
-                            <Badge
+                            <div
                                 key={cat}
-                                bg={category === cat || (cat === 'All' && !category) ? 'primary' : 'white'}
-                                className={`px-4 py-2 rounded-pill fs-6 cursor-pointer border hover-scale ${category === cat || (cat === 'All' && !category) ? 'text-white' : 'text-dark fw-normal'
+                                className={`badge-filter px-4 py-2 rounded-pill fs-6 cursor-pointer hover-scale ${category === cat || (cat === 'All' && !category) ? 'active' : ''
                                     }`}
                                 onClick={() => setCategory(cat)}
                                 style={{ cursor: 'pointer' }}
                             >
                                 {cat}
-                            </Badge>
+                            </div>
                         ))}
                     </div>
 

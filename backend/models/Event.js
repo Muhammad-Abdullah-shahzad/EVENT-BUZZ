@@ -61,6 +61,14 @@ const eventSchema = mongoose.Schema({
     isPaid: {
         type: Boolean,
         default: false
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected'],
+        default: 'pending'
+    },
+    rejectionReason: {
+        type: String
     }
 }, {
     timestamps: true

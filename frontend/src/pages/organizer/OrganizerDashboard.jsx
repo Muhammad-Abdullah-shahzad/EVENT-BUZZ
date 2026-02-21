@@ -86,11 +86,19 @@ const OrganizerDashboard = () => {
         }
     };
 
-    const StatusBadge = ({ date }) => {
+    const StatusBadge = ({ date, status }) => {
         const isPast = new Date(date) < new Date();
+
+        if (status === 'pending') {
+            return <Badge bg="warning" className="rounded-pill px-3">Pending Review</Badge>;
+        }
+        if (status === 'rejected') {
+            return <Badge bg="danger" className="rounded-pill px-3">Rejected</Badge>;
+        }
+
         return (
             <Badge bg={isPast ? 'secondary' : 'success'} className="rounded-pill px-3">
-                {isPast ? 'Past' : 'Upcoming'}
+                {isPast ? 'Past' : 'Approved'}
             </Badge>
         );
     };
@@ -146,7 +154,7 @@ const OrganizerDashboard = () => {
                                 </div>
                                 <div>
                                     <h6 className="text-muted mb-0">Total Revenue</h6>
-                                    <h3 className="fw-bold mb-0">${stats.revenue.toFixed(2)}</h3>
+                                    <h3 className="fw-bold mb-0">Rs. {stats.revenue.toFixed(2)}</h3>
                                 </div>
                             </Card.Body>
                         </Card>
@@ -226,7 +234,7 @@ const OrganizerDashboard = () => {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td><StatusBadge date={event.date} /></td>
+                                            <td><StatusBadge date={event.date} status={event.status} /></td>
                                             <td className="text-end pe-4">
                                                 <Button as={Link} to={`/organizer/edit-event/${event._id}`} variant="outline-primary" size="sm" className="me-2 rounded-pill">
                                                     Edit

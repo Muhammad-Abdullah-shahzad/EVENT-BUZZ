@@ -20,11 +20,29 @@ const updateUserRole = async (id, role) => {
     return response.data;
 };
 
+const getPendingEvents = async () => {
+    const response = await api.get('/events/admin/pending');
+    return response.data;
+};
+
+const approveEvent = async (id) => {
+    const response = await api.put(`/events/${id}/approve`);
+    return response.data;
+};
+
+const rejectEvent = async (id, reason) => {
+    const response = await api.put(`/events/${id}/reject`, { reason });
+    return response.data;
+};
+
 const adminService = {
     getStats,
     getUsers,
     deleteUser,
     updateUserRole,
+    getPendingEvents,
+    approveEvent,
+    rejectEvent,
 };
 
 export default adminService;
