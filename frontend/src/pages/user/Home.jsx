@@ -1,12 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
+import { Link } from 'react-router-dom';
 import { Container, Row, Col, Form, InputGroup, Button, Badge, Spinner } from 'react-bootstrap';
 import { HiOutlineSearch, HiOutlineCalendar, HiOutlineLocationMarker, HiOutlineFilter, HiOutlineCursorClick } from 'react-icons/hi';
 import Navbar from '../../components/common/Navbar';
 import EventList from '../../components/events/EventList';
 import EventMap from '../../components/events/EventMap';
+import CalendarView from '../../components/events/CalendarView';
 import eventService from '../../services/eventService';
+import LanguageContext from '../../context/LanguageContext';
 
 const Home = () => {
+    const { t, language } = useContext(LanguageContext);
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -97,10 +101,23 @@ const Home = () => {
                 <div className="position-absolute top-0 start-0 w-100 h-100 bg-noise opacity-10"></div>
                 <div className="position-absolute top-0 end-0 w-50 h-100 bg-gradient-glow opacity-20 blur-3xl"></div>
                 <Container className="py-5 position-relative z-index-1 animate-fade-in text-center">
-                    <h1 className="display-3 fw-bold mb-3">Discover Authentic <br /><span className="text-gradient">Experiences.</span></h1>
+                    <h1 className="display-3 fw-bold mb-3 d-flex flex-column align-items-center">
+                        {language === 'ur' ? (
+                            <>
+                                <span>دریافت کریں بہترین</span>
+                                <span className="text-gradient">ایونٹس</span>
+                            </>
+                        ) : (
+                            <>
+                                Discover Authentic
+                                <span className="text-gradient">Experiences.</span>
+                            </>
+                        )}
+                    </h1>
                     <p className="lead mb-5 opacity-75 mx-auto" style={{ maxWidth: '700px' }}>
-                        Join thousands of people discovering local events, from concerts to workshops.
-                        Event Buzz is your gate to the most exciting happenings around you.
+                        {language === 'ur'
+                            ? 'اپنے ارد گرد ہونے والے زبردست ایونٹس، کنسرٹس اور ورکشاپس کے لیے ہزاروں لوگوں کے ساتھ شامل ہوں۔'
+                            : 'Join thousands of people discovering local events, from concerts to workshops. Event Buzz is your gate to the most exciting happenings around you.'}
                     </p>
 
                     <div className="glass-dark p-3 rounded-pill mx-auto shadow-lg" style={{ maxWidth: '800px' }}>
@@ -112,7 +129,7 @@ const Home = () => {
                                             <HiOutlineSearch size={22} />
                                         </InputGroup.Text>
                                         <Form.Control
-                                            placeholder="What are you looking for?"
+                                            placeholder={t('searchPlaceholder')}
                                             className="bg-transparent border-0 text-white placeholder-light shadow-none"
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -125,7 +142,7 @@ const Home = () => {
                                             <HiOutlineLocationMarker size={22} />
                                         </InputGroup.Text>
                                         <Form.Control
-                                            placeholder="City or Venue..."
+                                            placeholder={t('location')}
                                             className="bg-transparent border-0 text-white placeholder-light shadow-none"
                                             value={locationSearch}
                                             onChange={(e) => setLocationSearch(e.target.value)}
@@ -134,7 +151,7 @@ const Home = () => {
                                 </Col>
                                 <Col md={3}>
                                     <Button type="submit" className="btn-primary-custom w-100 rounded-pill py-2">
-                                        Find Events
+                                        {language === 'ur' ? 'ایونٹس تلاش کریں' : 'Find Events'}
                                     </Button>
                                 </Col>
                             </Row>
@@ -155,30 +172,37 @@ const Home = () => {
                                 onClick={() => setCategory(cat)}
                                 style={{ cursor: 'pointer' }}
                             >
-                                {cat}
+                                {cat === 'All' ? t('all') : cat}
                             </div>
                         ))}
                     </div>
 
-                    <div className="d-flex justify-content-between align-items-end mb-4">
+                    <div className="d-flex flex-wrap justify-content-between align-items-end mb-4 gap-3">
                         <div>
-                            <h2 className="fw-bold mb-1">Upcoming Events</h2>
-                            <p className="text-muted">Handpicked events just for you</p>
+                            <h2 className="fw-bold mb-1">{t('upcomingEvents')}</h2>
+                            <p className="text-muted">{language === 'ur' ? 'خاص آپ کے لیے منتخب کردہ ایونٹس' : 'Handpicked events just for you'}</p>
                         </div>
-                        <div className="d-flex gap-2">
+                        <div className="d-flex flex-wrap gap-2">
                             <Button
                                 variant={viewMode === 'grid' ? 'primary' : 'outline-primary'}
                                 className="rounded-pill px-3"
                                 onClick={() => setViewMode('grid')}
                             >
-                                Grid View
+                                {language === 'ur' ? 'گرڈ ویو' : 'Grid View'}
                             </Button>
                             <Button
                                 variant={viewMode === 'map' ? 'primary' : 'outline-primary'}
                                 className="rounded-pill px-3"
                                 onClick={() => setViewMode('map')}
                             >
-                                Map View
+                                {language === 'ur' ? 'نقشہ ویو' : 'Map View'}
+                            </Button>
+                            <Button
+                                variant={viewMode === 'calendar' ? 'primary' : 'outline-primary'}
+                                className="rounded-pill px-3"
+                                onClick={() => setViewMode('calendar')}
+                            >
+                                {language === 'ur' ? 'کیلنڈر ویو' : 'Calendar View'}
                             </Button>
                             <Button
                                 variant={userLocation ? 'primary' : 'outline-primary'}
@@ -187,25 +211,54 @@ const Home = () => {
                                 disabled={locating}
                             >
                                 {locating ? <Spinner size="sm" /> : <HiOutlineCursorClick />}
-                                Events Near Me
+                                {language === 'ur' ? 'میرے قریبی ایونٹس' : 'Events Near Me'}
                             </Button>
                         </div>
                     </div>
 
-                    {/* Event List or Map View */}
+                    {/* Event List, Map or Calendar View */}
                     {viewMode === 'grid' ? (
                         <EventList events={filteredEvents} loading={loading} />
-                    ) : (
+                    ) : viewMode === 'map' ? (
                         <div className="animate-fade-in shadow-sm rounded-xl overflow-hidden border">
                             <EventMap events={filteredEvents} center={mapCenter} />
                         </div>
+                    ) : (
+                        <CalendarView events={filteredEvents} />
                     )}
                 </Container>
             </main>
 
-            <footer className="bg-dark text-white py-5 mt-5">
-                <Container className="text-center opacity-75">
-                    <p className="mb-0">© 2025 Event Buzz. All rights reserved.</p>
+            <footer className="py-5 mt-5" style={{ backgroundColor: '#1a1a1a' }}>
+                <Container>
+                    <Row className="gy-4 text-white opacity-75">
+                        <Col lg={4} className="text-center text-lg-start">
+                            <h4 className="fw-bold text-gradient mb-3">Event<span className="text-white">Buzz</span></h4>
+                            <p className="small mb-0">
+                                {language === 'ur'
+                                    ? 'پاکستان کا سب سے بڑا ایونٹ مینجمنٹ پلیٹ فارم۔'
+                                    : 'Pakistan’s premier event management and discovery platform.'}
+                            </p>
+                        </Col>
+                        <Col lg={4} className="text-center">
+                            <h5 className="fw-bold mb-3">{t('helpCenter')}</h5>
+                            <ul className="list-unstyled mb-0">
+                                <li><Link to="/help" className="text-white text-decoration-none small hover-text-primary px-2">{t('faq')}</Link></li>
+                                <li><Link to="/help" className="text-white text-decoration-none small hover-text-primary px-2">{t('helpCenter')}</Link></li>
+                            </ul>
+                        </Col>
+                        <Col lg={4} className="text-center text-lg-end">
+                            <h5 className="fw-bold mb-3">{language === 'ur' ? 'ہم سے رابطہ کریں' : 'Connect With Us'}</h5>
+                            <p className="small mb-0">📧 support@eventbuzz.pk</p>
+                            <p className="small mb-0">📱 +92 300 1234567</p>
+                        </Col>
+                    </Row>
+                    <hr className="my-4 border-secondary opacity-25" />
+                    <div className="text-center text-white opacity-50 small">
+                        {language === 'ur'
+                            ? `© ${new Date().getFullYear()} ایونٹ بز۔ تمام حقوق محفوظ ہیں۔`
+                            : `© ${new Date().getFullYear()} Event Buzz. All rights reserved.`}
+                    </div>
                 </Container>
             </footer>
         </div >

@@ -17,6 +17,7 @@ const CreateEvent = () => {
         ticketPrice: 0,
         capacity: 100,
         image: '',
+        gallery: [],
         location: { type: 'Point', coordinates: [74.3587, 31.5204] } // Default location लाहौर
     });
     const [uploading, setUploading] = useState(false);
@@ -43,9 +44,37 @@ const CreateEvent = () => {
             setUploading(false);
         } catch (err) {
             console.error('Upload Error:', err);
-            setError('File upload failed. Check your Cloudinary settings.');
+            setError('File upload failed. Check your connection.');
             setUploading(false);
         }
+    };
+
+    const handleGalleryUpload = async (e) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        setUploading(true);
+        setError('');
+
+        try {
+            const urls = await eventService.uploadImages(files);
+            setFormData(prev => ({
+                ...prev,
+                gallery: [...prev.gallery, ...urls]
+            }));
+            setUploading(false);
+        } catch (err) {
+            console.error('Gallery Upload Error:', err);
+            setError('Some images failed to upload.');
+            setUploading(false);
+        }
+    };
+
+    const removeGalleryImage = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            gallery: prev.gallery.filter((_, i) => i !== index)
+        }));
     };
 
     const handleSubmit = async (e) => {
@@ -222,42 +251,79 @@ const CreateEvent = () => {
                                         </Row>
                                     </div>
 
-                                    <Form.Group className="mb-5">
-                                        <Form.Label className="fw-bold small text-muted">EVENT COVER IMAGE</Form.Label>
-                                        <div
-                                            className="image-upload-zone p-5 text-center rounded-xl border-dashed position-relative mb-3"
-                                            style={{ backgroundColor: '#f8f9fa', border: '2px dashed #dee2e6', cursor: 'pointer' }}
-                                        >
-                                            {formData.image ? (
-                                                <div className="position-relative">
-                                                    <img
-                                                        src={formData.image}
-                                                        alt="Cover Preview"
-                                                        className="img-fluid rounded mb-3"
-                                                        style={{ maxHeight: '300px' }}
-                                                    />
-                                                    <div className="position-absolute top-0 end-0 m-2">
-                                                        <Button variant="danger" size="sm" onClick={() => setFormData({ ...formData, image: '' })}>Change Image</Button>
+                                    <div className="bg-light p-4 rounded-xl mb-4">
+                                        <h6 className="fw-bold mb-3"><HiOutlinePhotograph size={20} className="text-primary me-2" />Visuals</h6>
+                                        <Row className="g-4">
+                                            <Col md={6}>
+                                                <Form.Label className="small text-muted">EVENT POSTER</Form.Label>
+                                                <div
+                                                    className="upload-box border-dashed rounded-xl p-4 text-center bg-white position-relative"
+                                                    style={{ border: '2px dashed #dee2e6', minHeight: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}
+                                                >
+                                                    {formData.image ? (
+                                                        <div className="position-relative w-100">
+                                                            <img src={formData.image} alt="Preview" className="img-fluid rounded shadow-sm mb-2" style={{ maxHeight: '150px' }} />
+                                                            <div>
+                                                                <Button variant="outline-danger" size="sm" className="rounded-pill" onClick={() => setFormData({ ...formData, image: '' })}>Change Poster</Button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div onClick={() => document.getElementById('poster-upload').click()} style={{ cursor: 'pointer' }}>
+                                                            <HiOutlineCloudUpload size={40} className="text-muted mb-2 opacity-50" />
+                                                            <p className="small text-muted mb-0">Click to upload poster</p>
+                                                            <Form.Control
+                                                                id="poster-upload"
+                                                                type="file"
+                                                                onChange={handleUpload}
+                                                                className="d-none"
+                                                                accept="image/*"
+                                                                disabled={uploading}
+                                                            />
+                                                            {uploading && <Spinner animation="border" size="sm" className="mt-2" />}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </Col>
+
+                                            <Col md={6}>
+                                                <Form.Label className="small text-muted">IMAGE GALLERY (OPTIONAL)</Form.Label>
+                                                <div
+                                                    className="upload-box border-dashed rounded-xl p-4 text-center bg-white position-relative"
+                                                    style={{ border: '2px dashed #dee2e6', minHeight: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}
+                                                >
+                                                    <div onClick={() => document.getElementById('gallery-upload').click()} style={{ cursor: 'pointer' }}>
+                                                        <HiOutlineCloudUpload size={30} className="text-muted mb-2 opacity-50" />
+                                                        <p className="small text-muted mb-0">Upload multiple images</p>
+                                                        <Form.Control
+                                                            id="gallery-upload"
+                                                            type="file"
+                                                            multiple
+                                                            onChange={handleGalleryUpload}
+                                                            className="d-none"
+                                                            accept="image/*"
+                                                            disabled={uploading}
+                                                        />
+                                                        {uploading && <Spinner animation="border" size="sm" className="mt-2" />}
                                                     </div>
                                                 </div>
-                                            ) : (
-                                                <div onClick={() => document.getElementById('image-upload').click()}>
-                                                    <HiOutlineCloudUpload size={50} className="text-muted mb-3" />
-                                                    <h6 className="fw-bold">Click to upload or drag & drop</h6>
-                                                    <p className="small text-muted mb-0">PNG, JPG or JPEG (MAX. 800x400px)</p>
-                                                    {uploading && <Spinner animation="border" size="sm" className="mt-2" />}
+                                                <div className="d-flex flex-wrap gap-2 mt-3">
+                                                    {formData.gallery.map((url, idx) => (
+                                                        <div key={idx} className="position-relative">
+                                                            <img src={url} alt={`Gallery ${idx}`} className="rounded shadow-sm" style={{ width: '60px', height: '60px', objectFit: 'cover' }} />
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-danger btn-sm rounded-circle position-absolute top-0 end-0 p-0 d-flex align-items-center justify-content-center"
+                                                                style={{ width: '18px', height: '18px', transform: 'translate(40%, -40%)', fontSize: '10px' }}
+                                                                onClick={() => removeGalleryImage(idx)}
+                                                            >
+                                                                ×
+                                                            </button>
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            )}
-                                            <Form.Control
-                                                id="image-upload"
-                                                type="file"
-                                                accept="image/*"
-                                                className="d-none"
-                                                onChange={handleUpload}
-                                            />
-                                        </div>
-                                        <Form.Text className="text-muted">A high-quality image helps your event stand out.</Form.Text>
-                                    </Form.Group>
+                                            </Col>
+                                        </Row>
+                                    </div>
 
                                     <div className="d-grid pt-3">
                                         <Button

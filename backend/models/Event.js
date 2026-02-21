@@ -45,6 +45,10 @@ const eventSchema = mongoose.Schema({
         type: String,
         required: false
     },
+    gallery: {
+        type: [String],
+        default: []
+    },
     ticketPrice: {
         type: Number,
         required: true,
@@ -64,7 +68,7 @@ const eventSchema = mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'approved', 'rejected'],
+        enum: ['pending', 'approved', 'rejected', 'archived'],
         default: 'pending'
     },
     rejectionReason: {

@@ -20,11 +20,24 @@ const getEvents = async (req, res) => {
         const { category, minPrice, maxPrice, date, lat, lng, distance, status } = req.query;
         let filters = { ...keyword };
 
-        // Strictly enforce approved events for public. Only admins can view pending via status filter.
+        if (date) {
+            filters.date = { $gte: new Date(date) };
+        } else if (!req.query.includePast) {
+            // Default: Only show upcoming events
+            filters.date = { $gte: new Date() };
+        }
+
+        // Strictly enforce approved events for public. 
+        // Exclude archived events unless specifically requested.
         if (status && req.user && req.user.role === 'admin') {
             filters.status = status;
         } else {
             filters.status = 'approved';
+            // Ensure archived events are not shown to public users
+            if (!filters.$and) {
+                filters.$and = [];
+            }
+            filters.$and.push({ status: { $ne: 'archived' } });
         }
 
         if (category && category !== 'All') {
@@ -35,10 +48,6 @@ const getEvents = async (req, res) => {
             filters.ticketPrice = {};
             if (minPrice) filters.ticketPrice.$gte = Number(minPrice);
             if (maxPrice) filters.ticketPrice.$lte = Number(maxPrice);
-        }
-
-        if (date) {
-            filters.date = { $gte: new Date(date) };
         }
 
         if (lat && lng) {
@@ -108,10 +117,22 @@ const createEvent = async (req, res) => {
         location,
         ticketPrice,
         capacity,
-        image
+        image,
+        gallery
     } = req.body;
 
     try {
+        const existingEvent = await Event.findOne({
+            title: { $regex: new RegExp(`^${title.trim()}$`, 'i') },
+            venue: { $regex: new RegExp(`^${venue.trim()}$`, 'i') },
+            date: new Date(date)
+        });
+
+        if (existingEvent) {
+            res.status(400);
+            throw new Error('Duplicate event detected: An event with this title and date is already listed at this venue.');
+        }
+
         const eventStatus = (req.user.role && req.user.role.toLowerCase() === 'admin') ? 'approved' : 'pending';
 
         const event = new Event({
@@ -126,6 +147,7 @@ const createEvent = async (req, res) => {
             ticketPrice,
             capacity,
             image,
+            gallery: gallery || [],
             isPaid: ticketPrice > 0,
             status: eventStatus
         });
@@ -217,6 +239,25 @@ const updateEvent = async (req, res) => {
 
             const dateChanged = req.body.date && new Date(req.body.date).getTime() !== new Date(event.date).getTime();
             const venueChanged = req.body.venue && req.body.venue !== event.venue;
+            const titleChanged = req.body.title && req.body.title.toLowerCase().trim() !== event.title.toLowerCase().trim();
+
+            if (dateChanged || venueChanged || titleChanged) {
+                const checkTitle = req.body.title || event.title;
+                const checkVenue = req.body.venue || event.venue;
+                const checkDate = req.body.date ? new Date(req.body.date) : event.date;
+
+                const duplicate = await Event.findOne({
+                    _id: { $ne: event._id },
+                    title: { $regex: new RegExp(`^${checkTitle.trim()}$`, 'i') },
+                    venue: { $regex: new RegExp(`^${checkVenue.trim()}$`, 'i') },
+                    date: checkDate
+                });
+
+                if (duplicate) {
+                    res.status(400);
+                    throw new Error('Update conflict: Another event with this title and date is already listed at this venue.');
+                }
+            }
 
             event.title = req.body.title || event.title;
             event.description = req.body.description || event.description;
@@ -225,8 +266,9 @@ const updateEvent = async (req, res) => {
             event.venue = req.body.venue || event.venue;
             event.address = req.body.address || event.address;
             event.ticketPrice = req.body.ticketPrice ?? event.ticketPrice;
-            event.capacity = req.body.capacity ?? event.capacity;
+            event.capacity = req.body.capacity || event.capacity;
             event.image = req.body.image || event.image;
+            event.gallery = req.body.gallery || event.gallery;
             event.isPaid = event.ticketPrice > 0;
 
             // Reset status to pending if updated by an organizer (require re-approval)

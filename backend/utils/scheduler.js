@@ -53,6 +53,20 @@ const initScheduler = () => {
                     );
                 }
             }
+
+            // 3. Auto-Archive Past Events
+            const archiveResult = await Event.updateMany(
+                {
+                    status: 'approved',
+                    date: { $lt: now }
+                },
+                {
+                    $set: { status: 'archived' }
+                }
+            );
+            if (archiveResult.modifiedCount > 0) {
+                console.log(`Auto-Archived ${archiveResult.modifiedCount} past events.`);
+            }
         } catch (error) {
             console.error('Scheduler Error:', error.message);
         }

@@ -70,6 +70,28 @@ const uploadImage = async (file) => {
     return response.data.secure_url;
 };
 
+const uploadImages = async (files) => {
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+    if (!cloudName || !uploadPreset) {
+        throw new Error('Cloudinary credentials missing in .env');
+    }
+
+    const uploadPromises = Array.from(files).map(async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', uploadPreset);
+        const response = await axios.post(
+            `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+            formData
+        );
+        return response.data.secure_url;
+    });
+
+    return Promise.all(uploadPromises);
+};
+
 const eventService = {
     getAllEvents,
     getEvents: getAllEvents, // Alias for convenience
@@ -79,6 +101,7 @@ const eventService = {
     updateEvent,
     getOrganizerEvents,
     uploadImage,
+    uploadImages,
 };
 
 export default eventService;

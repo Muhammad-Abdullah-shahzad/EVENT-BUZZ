@@ -4,13 +4,15 @@ import { Navbar as BsNavbar, Nav, Container, NavDropdown, Button } from 'react-b
 import AuthContext from '../../context/AuthContext';
 import ThemeContext from '../../context/ThemeContext';
 import NotificationContext from '../../context/NotificationContext';
-import { HiOutlineUserCircle, HiOutlineLogout, HiOutlineCalendar, HiOutlinePlusCircle, HiOutlineChartBar, HiOutlineSearch, HiOutlineSun, HiOutlineMoon, HiOutlineBell, HiOutlineTrash } from 'react-icons/hi';
+import LanguageContext from '../../context/LanguageContext';
+import { HiOutlineUserCircle, HiOutlineLogout, HiOutlineCalendar, HiOutlinePlusCircle, HiOutlineChartBar, HiOutlineSearch, HiOutlineSun, HiOutlineMoon, HiOutlineBell, HiOutlineTrash, HiOutlineTranslate } from 'react-icons/hi';
 import { Badge, Dropdown } from 'react-bootstrap';
 
 const Navbar = () => {
     const { user, logout } = useContext(AuthContext);
     const { isDarkMode, toggleTheme } = useContext(ThemeContext);
     const { notifications, unreadCount, markAsRead, deleteNotification } = useContext(NotificationContext);
+    const { language, toggleLanguage, t } = useContext(LanguageContext);
     const navigate = useNavigate();
 
     const handleLogout = () => {
@@ -26,6 +28,13 @@ const Navbar = () => {
                 </BsNavbar.Brand>
 
                 <div className="d-flex align-items-center gap-2 d-lg-none">
+                    <Button
+                        variant="link"
+                        className="p-2 text-dark shadow-none"
+                        onClick={() => toggleLanguage(language === 'en' ? 'ur' : 'en')}
+                    >
+                        <HiOutlineTranslate size={22} title={language === 'en' ? 'Urdu' : 'English'} />
+                    </Button>
                     {user && (
                         <Dropdown align="end">
                             <Dropdown.Toggle variant="link" className="p-2 text-dark shadow-none position-relative">
@@ -38,8 +47,8 @@ const Navbar = () => {
                             </Dropdown.Toggle>
                             <Dropdown.Menu className="notification-dropdown shadow-lg border-0 p-0 overflow-hidden" style={{ width: '300px' }}>
                                 <div className="p-3 bg-primary text-white d-flex justify-content-between align-items-center">
-                                    <h6 className="mb-0">Notifications</h6>
-                                    <Badge bg="light" text="dark">{unreadCount} New</Badge>
+                                    <h6 className="mb-0">{t('notifications')}</h6>
+                                    <Badge bg="light" text="dark">{unreadCount} {t('new')}</Badge>
                                 </div>
                                 <div className="overflow-auto" style={{ maxHeight: '350px' }}>
                                     {notifications.length > 0 ? (
@@ -56,7 +65,7 @@ const Navbar = () => {
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="p-4 text-center text-muted">No notifications</div>
+                                        <div className="p-4 text-center text-muted">{t('noNotifications')}</div>
                                     )}
                                 </div>
                             </Dropdown.Menu>
@@ -74,14 +83,38 @@ const Navbar = () => {
                 </div>
 
                 <BsNavbar.Collapse id="basic-navbar-nav">
-                    <Nav className="ms-auto align-items-center gap-2">
+                    <Nav className={`${language === 'ur' ? 'me-auto' : 'ms-auto'} align-items-center gap-2`}>
                         <Nav.Link as={Link} to="/" className="fw-semibold px-3">
-                            <HiOutlineSearch className="me-1" /> Discover
+                            <HiOutlineSearch className="me-1" /> {t('discover')}
                         </Nav.Link>
+
+                        <Nav.Link as={Link} to="/help" className="fw-semibold px-3">
+                            {t('helpCenter')}
+                        </Nav.Link>
+
+                        <div className="d-flex align-items-center gap-1 mx-2">
+                            <Button
+                                variant="link"
+                                className={`p-1 text-dark shadow-none hover-scale ${language === 'en' ? 'fw-bold border-bottom border-primary' : 'opacity-50'}`}
+                                onClick={() => toggleLanguage('en')}
+                                style={{ fontSize: '0.8rem' }}
+                            >
+                                EN
+                            </Button>
+                            <span className="text-muted opacity-25">|</span>
+                            <Button
+                                variant="link"
+                                className={`p-1 text-dark shadow-none hover-scale ${language === 'ur' ? 'fw-bold border-bottom border-primary' : 'opacity-50'}`}
+                                onClick={() => toggleLanguage('ur')}
+                                style={{ fontSize: '0.9rem' }}
+                            >
+                                اردو
+                            </Button>
+                        </div>
 
                         <Button
                             variant="link"
-                            className="p-2 text-dark shadow-none d-none d-lg-block mx-2 hover-scale"
+                            className="p-2 text-dark shadow-none d-none d-lg-block mx-1 hover-scale"
                             onClick={toggleTheme}
                             aria-label="Toggle theme"
                         >
@@ -100,8 +133,8 @@ const Navbar = () => {
                                 </Dropdown.Toggle>
                                 <Dropdown.Menu className="notification-dropdown shadow-lg border-0 p-0 overflow-hidden" style={{ width: '320px' }}>
                                     <div className="p-3 bg-primary text-white d-flex justify-content-between align-items-center">
-                                        <h6 className="mb-0 fw-bold">Notifications</h6>
-                                        <Badge bg="light" text="dark" pill>{unreadCount} New</Badge>
+                                        <h6 className="mb-0 fw-bold">{t('notifications')}</h6>
+                                        <Badge bg="light" text="dark" pill>{unreadCount} {t('new')}</Badge>
                                     </div>
                                     <div className="overflow-auto bg-card" style={{ maxHeight: '400px' }}>
                                         {notifications.length > 0 ? (
@@ -129,13 +162,13 @@ const Navbar = () => {
                                         ) : (
                                             <div className="p-5 text-center text-muted">
                                                 <HiOutlineBell size={30} className="mb-2 opacity-25" />
-                                                <p className="small mb-0">No notifications yet</p>
+                                                <p className="small mb-0">{t('noNotifications')}</p>
                                             </div>
                                         )}
                                     </div>
                                     {notifications.length > 0 && (
                                         <div className="p-2 border-top text-center bg-light">
-                                            <small className="text-primary cursor-pointer hover-underline">View all</small>
+                                            <small className="text-primary cursor-pointer hover-underline">{t('viewAll')}</small>
                                         </div>
                                     )}
                                 </Dropdown.Menu>
@@ -146,24 +179,24 @@ const Navbar = () => {
                             <>
                                 {user.role === 'organizer' && (
                                     <>
-                                        <Nav.Link as={Link} to="/organizer/dashboard" className="fw-semibold px-3">
-                                            <HiOutlineChartBar className="me-1" /> Dashboard
+                                        <Nav.Link as={Link} to="/organizer/dashboard" className="fw-semibold px-3 text-nowrap">
+                                            <HiOutlineChartBar className="me-1" /> {t('dashboard')}
                                         </Nav.Link>
-                                        <Nav.Link as={Link} to="/organizer/create-event" className="fw-semibold px-3 text-primary">
-                                            <HiOutlinePlusCircle className="me-1" /> Create Event
+                                        <Nav.Link as={Link} to="/organizer/create-event" className="fw-semibold px-3 text-primary text-nowrap">
+                                            <HiOutlinePlusCircle className="me-1" /> {t('createEvent')}
                                         </Nav.Link>
                                     </>
                                 )}
 
                                 {user.role === 'admin' && (
-                                    <Nav.Link as={Link} to="/admin/dashboard" className="fw-semibold px-3">
-                                        <HiOutlineChartBar className="me-1" /> Admin Panel
+                                    <Nav.Link as={Link} to="/admin/dashboard" className="fw-semibold px-3 text-nowrap">
+                                        <HiOutlineChartBar className="me-1" /> {t('adminPanel')}
                                     </Nav.Link>
                                 )}
 
                                 {user.role === 'user' && (
-                                    <Nav.Link as={Link} to="/user/bookings" className="fw-semibold px-3">
-                                        <HiOutlineCalendar className="me-1" /> My Bookings
+                                    <Nav.Link as={Link} to="/user/bookings" className="fw-semibold px-3 text-nowrap">
+                                        <HiOutlineCalendar className="me-1" /> {t('myBookings')}
                                     </Nav.Link>
                                 )}
 
@@ -179,21 +212,21 @@ const Navbar = () => {
                                     className="ms-2"
                                 >
                                     <NavDropdown.Item as={Link} to="/profile">
-                                        <HiOutlineUserCircle className="me-2" /> Profile
+                                        <HiOutlineUserCircle className="me-2" /> {t('profile')}
                                     </NavDropdown.Item>
                                     <NavDropdown.Divider />
                                     <NavDropdown.Item onClick={handleLogout} className="text-danger">
-                                        <HiOutlineLogout className="me-2" /> Logout
+                                        <HiOutlineLogout className="me-2" /> {t('logout')}
                                     </NavDropdown.Item>
                                 </NavDropdown>
                             </>
                         ) : (
                             <>
                                 <Link to="/login" className="btn btn-outline-primary border-0 fw-bold px-4">
-                                    Login
+                                    {t('login')}
                                 </Link>
-                                <Link to="/register" className="btn btn-primary-custom px-4">
-                                    Join Now
+                                <Link to="/register" className="btn btn-primary-custom px-4 text-nowrap">
+                                    {t('joinNow')}
                                 </Link>
                             </>
                         )}
