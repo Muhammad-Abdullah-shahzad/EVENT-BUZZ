@@ -16,6 +16,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import SuccessPage from './pages/payment/SuccessPage';
 import CancelPage from './pages/payment/CancelPage';
+import ChatBot from './components/common/ChatBot';
 
 import HelpCenter from './pages/user/HelpCenter';
 
@@ -52,6 +53,7 @@ function App() {
                   <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 </Route>
               </Routes>
+              <ChatBot />
             </NotificationProvider>
           </LanguageProvider>
         </AuthProvider>
