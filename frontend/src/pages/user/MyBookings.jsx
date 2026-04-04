@@ -29,6 +29,38 @@ const MyBookings = () => {
         fetchBookings();
     }, []);
 
+    const handleCancelBooking = async (bookingId) => {
+        if (!window.confirm('Are you sure you want to cancel this booking?')) return;
+        setLoading(true);
+        try {
+            await bookingService.cancelBooking(bookingId);
+            await fetchBookings();
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to cancel booking');
+            setLoading(false);
+        }
+    };
+
+    const handleShareTicket = async () => {
+        if (!selectedBooking) return;
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: `${selectedBooking.event.title} Ticket`,
+                    text: `Here is my ticket for ${selectedBooking.event.title}.`,
+                    url: selectedBooking.qrCode,
+                });
+            } catch (err) {
+                console.log('Share error:', err);
+            }
+        } else {
+            const a = document.createElement('a');
+            a.href = selectedBooking.qrCode;
+            a.download = `ticket-${selectedBooking.bookingId || selectedBooking._id}.jpg`;
+            a.click();
+        }
+    };
+
     const handlePayClick = (booking) => {
         setSelectedBooking(booking);
         setShowPayModal(true);
@@ -105,22 +137,46 @@ const MyBookings = () => {
                                                 </div>
 
                                                 <div className="d-flex gap-2">
+                                                <div className="d-flex w-100 gap-2">
                                                     {booking.paymentStatus === 'Pending' ? (
-                                                        <Button
-                                                            className="btn-primary-custom w-100 rounded-pill py-2"
-                                                            onClick={() => handlePayClick(booking)}
-                                                        >
-                                                            <HiOutlineCreditCard className="me-2" /> Pay Now
-                                                        </Button>
+                                                        <>
+                                                            <Button
+                                                                className="btn-primary-custom flex-grow-1 rounded-pill py-2"
+                                                                onClick={() => handlePayClick(booking)}
+                                                            >
+                                                                <HiOutlineCreditCard className="me-2" /> Pay
+                                                            </Button>
+                                                            <Button
+                                                                variant="outline-danger"
+                                                                className="rounded-pill py-2"
+                                                                onClick={() => handleCancelBooking(booking._id)}
+                                                            >
+                                                                Cancel
+                                                            </Button>
+                                                        </>
+                                                    ) : booking.paymentStatus !== 'Cancelled' ? (
+                                                        <>
+                                                            <Button
+                                                                variant="dark"
+                                                                className="flex-grow-1 rounded-pill py-2"
+                                                                onClick={() => handleViewTicket(booking)}
+                                                            >
+                                                                <HiOutlineQrcode className="me-2" /> Ticket
+                                                            </Button>
+                                                            <Button
+                                                                variant="outline-danger"
+                                                                className="rounded-pill py-2"
+                                                                onClick={() => handleCancelBooking(booking._id)}
+                                                            >
+                                                                Cancel
+                                                            </Button>
+                                                        </>
                                                     ) : (
-                                                        <Button
-                                                            variant="dark"
-                                                            className="w-100 rounded-pill py-2"
-                                                            onClick={() => handleViewTicket(booking)}
-                                                        >
-                                                            <HiOutlineQrcode className="me-2" /> View Ticket
+                                                        <Button variant="secondary" className="w-100 rounded-pill py-2" disabled>
+                                                            Cancelled
                                                         </Button>
                                                     )}
+                                                </div>
                                                 </div>
                                             </Card.Body>
                                         </Col>
@@ -168,11 +224,14 @@ const MyBookings = () => {
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-light p-3 text-center">
-                            <Button variant="outline-dark" size="sm" className="rounded-pill px-4" onClick={() => window.print()}>
-                                Print Ticket
-                            </Button>
-                        </div>
+                            <div className="bg-light p-3 text-center">
+                                <Button variant="outline-dark" size="sm" className="rounded-pill px-4" onClick={() => window.print()}>
+                                    Print Ticket
+                                </Button>
+                                <Button variant="primary" size="sm" className="rounded-pill px-4 ms-2" onClick={handleShareTicket}>
+                                    Share QR code
+                                </Button>
+                            </div>
                     </Modal.Body>
                 </Modal>
 

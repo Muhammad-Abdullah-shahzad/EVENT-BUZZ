@@ -52,44 +52,25 @@ const getOrganizerEvents = async () => {
 };
 
 const uploadImage = async (file) => {
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-
-    if (!cloudName || !uploadPreset) {
-        throw new Error('Cloudinary credentials missing in .env');
-    }
-
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', uploadPreset);
+    formData.append('image', file);
 
-    const response = await axios.post(
-        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        formData
-    );
-    return response.data.secure_url;
+    const response = await api.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
 };
 
 const uploadImages = async (files) => {
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-
-    if (!cloudName || !uploadPreset) {
-        throw new Error('Cloudinary credentials missing in .env');
-    }
-
-    const uploadPromises = Array.from(files).map(async (file) => {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', uploadPreset);
-        const response = await axios.post(
-            `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-            formData
-        );
-        return response.data.secure_url;
+    const formData = new FormData();
+    Array.from(files).forEach((file) => {
+        formData.append('images', file);
     });
 
-    return Promise.all(uploadPromises);
+    const response = await api.post('/upload/gallery', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
 };
 
 const eventService = {

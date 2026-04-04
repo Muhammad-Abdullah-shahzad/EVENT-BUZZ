@@ -10,9 +10,15 @@ const getMyBookings = async () => {
     return response.data;
 };
 
+const cancelBooking = async (id) => {
+    const response = await api.put(`/bookings/${id}/cancel`);
+    return response.data;
+};
+
 const bookingService = {
     createBooking,
     getMyBookings,
+    cancelBooking,
 };
 
 export default bookingService;
