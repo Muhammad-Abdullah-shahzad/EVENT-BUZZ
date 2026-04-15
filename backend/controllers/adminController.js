@@ -47,19 +47,19 @@ const deleteUser = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
 
-        if (user) {
-            if (user.role === 'admin') {
-                res.status(400);
-                throw new Error('Cannot delete admin user');
-            }
-            await user.deleteOne();
-            res.json({ message: 'User removed' });
-        } else {
-            res.status(404);
-            throw new Error('User not found');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
         }
+
+        if (user.role === 'admin') {
+            return res.status(400).json({ message: 'Cannot delete admin user' });
+        }
+
+        await User.findByIdAndDelete(req.params.id);
+        res.json({ message: 'User removed successfully' });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('Delete User Error:', error);
+        res.status(500).json({ message: 'Failed to delete user: ' + error.message });
     }
 };
 
@@ -70,21 +70,22 @@ const updateUserRole = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
 
-        if (user) {
-            user.role = req.body.role || user.role;
-            const updatedUser = await user.save();
-            res.json({
-                _id: updatedUser._id,
-                name: updatedUser.name,
-                email: updatedUser.email,
-                role: updatedUser.role
-            });
-        } else {
-            res.status(404);
-            throw new Error('User not found');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
         }
+
+        user.role = req.body.role || user.role;
+        const updatedUser = await user.save();
+        
+        res.json({
+            _id: updatedUser._id,
+            name: updatedUser.name,
+            email: updatedUser.email,
+            role: updatedUser.role
+        });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('Update Role Error:', error);
+        res.status(500).json({ message: 'Failed to update user role: ' + error.message });
     }
 };
 

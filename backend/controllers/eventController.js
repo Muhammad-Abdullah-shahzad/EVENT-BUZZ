@@ -23,8 +23,10 @@ const getEvents = async (req, res) => {
         if (date) {
             filters.date = { $gte: new Date(date) };
         } else if (!req.query.includePast) {
-            // Default: Only show upcoming events
-            filters.date = { $gte: new Date() };
+            // Default: Only show upcoming events (including today's events)
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            filters.date = { $gte: today };
         }
 
         // Strictly enforce approved events for public. 
@@ -399,3 +401,4 @@ module.exports = {
     rejectEvent,
     getPendingEvents,
 };
+
