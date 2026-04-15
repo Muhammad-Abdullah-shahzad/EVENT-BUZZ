@@ -42,22 +42,42 @@ const MyBookings = () => {
     };
 
     const handleShareTicket = async () => {
-        if (!selectedBooking) return;
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: `${selectedBooking.event.title} Ticket`,
-                    text: `Here is my ticket for ${selectedBooking.event.title}.`,
-                    url: selectedBooking.qrCode,
-                });
-            } catch (err) {
-                console.log('Share error:', err);
+        if (!selectedBooking?.qrCode) return;
+
+        try {
+            if (selectedBooking.qrCode.startsWith('data:image/')) {
+                const response = await fetch(selectedBooking.qrCode);
+                const blob = await response.blob();
+                const file = new File([blob], `ticket-${selectedBooking._id}.png`, { type: blob.type });
+
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        title: `${selectedBooking.event?.title} Ticket`,
+                        text: `Here is my ticket for ${selectedBooking.event?.title}.`,
+                        files: [file]
+                    });
+                    return;
+                }
             }
-        } else {
+
+            // Fallback to downloading if file sharing is not supported
             const a = document.createElement('a');
             a.href = selectedBooking.qrCode;
-            a.download = `ticket-${selectedBooking.bookingId || selectedBooking._id}.jpg`;
+            a.download = `ticket-${selectedBooking._id}.png`;
+            document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
+
+        } catch (err) {
+            console.error('Share error:', err);
+            if (err.name !== 'AbortError') {
+                const a = document.createElement('a');
+                a.href = selectedBooking.qrCode;
+                a.download = `ticket-${selectedBooking._id}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
         }
     };
 
