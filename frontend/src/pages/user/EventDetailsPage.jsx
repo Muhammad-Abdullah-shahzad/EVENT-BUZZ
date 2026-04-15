@@ -67,6 +67,31 @@ const EventDetailsPage = () => {
         }
     };
 
+    const handleShare = async () => {
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    title: event?.title,
+                    text: `Check out this event: ${event?.title}`,
+                    url: window.location.href,
+                });
+            } else {
+                await navigator.clipboard.writeText(window.location.href);
+                alert(language === 'ur' ? 'لنک کاپی ہو گیا!' : 'Link copied to clipboard!');
+            }
+        } catch (err) {
+            console.error('Error sharing:', err);
+            if (err.name !== 'AbortError') {
+                try {
+                    await navigator.clipboard.writeText(window.location.href);
+                    alert(language === 'ur' ? 'لنک کاپی ہو گیا!' : 'Link copied to clipboard!');
+                } catch (clipboardErr) {
+                    console.error('Clipboard error:', clipboardErr);
+                }
+            }
+        }
+    };
+
     if (loading) return (
         <div className="d-flex justify-content-center align-items-center vh-100"><Spinner animation="border" variant="primary" /></div>
     );
@@ -190,7 +215,7 @@ const EventDetailsPage = () => {
                             <Card className="border-0 shadow-sm rounded-xl p-4 bg-card text-start">
                                 <div className="d-flex justify-content-between align-items-center mb-4">
                                     <h5 className="fw-bold mb-0">{t('buyTicket')}</h5>
-                                    <Button variant="light" className="rounded-circle p-2 shadow-sm border">
+                                    <Button variant="light" className="rounded-circle p-2 shadow-sm border" onClick={handleShare} title={language === 'ur' ? 'شیئر کریں' : 'Share Event'}>
                                         <HiOutlineShare size={18} />
                                     </Button>
                                 </div>

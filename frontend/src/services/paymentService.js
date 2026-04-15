@@ -13,22 +13,10 @@ const verifyPayment = async (sessionId, bookingId) => {
 };
 
 const processPayFastPayment = (paymentUrl, postData) => {
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = paymentUrl;
-
-    for (const key in postData) {
-        if (Object.prototype.hasOwnProperty.call(postData, key)) {
-            const hiddenField = document.createElement('input');
-            hiddenField.type = 'hidden';
-            hiddenField.name = key;
-            hiddenField.value = postData[key];
-            form.appendChild(hiddenField);
-        }
+    // Navigate to fake stripe sandbox or real stripe based on paymentUrl
+    if (paymentUrl) {
+        window.location.href = paymentUrl;
     }
-
-    document.body.appendChild(form);
-    form.submit();
 };
 
 const paymentService = {

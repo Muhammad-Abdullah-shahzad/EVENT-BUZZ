@@ -35,7 +35,7 @@ const urlencode = (str) => {
         .replace(/%20/g, '+');
 };
 
-// @desc    Create PayFast (SA) Payment Request Payload
+// @desc    Create Fake Stripe Payment Request Payload (Local Simulator)
 // @route   POST /api/payments/create-session
 // @access  Private
 const createCheckoutSession = async (req, res) => {
@@ -48,38 +48,19 @@ const createCheckoutSession = async (req, res) => {
             return res.status(404).json({ message: 'Booking not found' });
         }
 
-        const merchantId = process.env.PAYFAST_MERCHANT_ID;
-        const merchantKey = process.env.PAYFAST_MERCHANT_KEY;
-        const passphrase = process.env.PAYFAST_PASSPHRASE;
-
         const amount = booking.totalAmount.toFixed(2);
         const orderId = booking._id.toString();
 
-        // PayFast (SA) Fields
-        const postData = {
-            merchant_id: merchantId,
-            merchant_key: merchantKey,
-            return_url: `${process.env.CLIENT_URL}/payment/success?booking_id=${orderId}`,
-            cancel_url: `${process.env.CLIENT_URL}/payment/cancel?booking_id=${orderId}`,
-            notify_url: process.env.PAYFAST_CALLBACK_URL,
-            name_first: booking.user.name.split(' ')[0] || 'Customer',
-            name_last: booking.user.name.split(' ')[1] || 'Name',
-            email_address: booking.user.email,
-            m_payment_id: orderId,
-            amount: amount,
-            item_name: `Booking for ${booking.event.title}`
-        };
-
-        // Generate Signature
-        postData.signature = generateSignature(postData, passphrase);
+        // Generate Fake Stripe URL
+        const paymentUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/fake-stripe?booking_id=${orderId}&amount=${amount}&event_name=${encodeURIComponent(booking.event.title)}`;
 
         res.json({
-            paymentUrl: process.env.PAYFAST_URL,
-            postData: postData
+            paymentUrl: paymentUrl,
+            postData: {}
         });
 
     } catch (error) {
-        console.error('PayFast Request Error:', error);
+        console.error('Checkout Session Request Error:', error);
         res.status(400).json({ message: error.message });
     }
 };

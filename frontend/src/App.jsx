@@ -16,6 +16,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import SuccessPage from './pages/payment/SuccessPage';
 import CancelPage from './pages/payment/CancelPage';
+import FakeStripeCheckout from './pages/payment/FakeStripeCheckout';
 import ChatBot from './components/common/ChatBot';
 
 import HelpCenter from './pages/user/HelpCenter';
@@ -36,6 +37,7 @@ function App() {
                 <Route path="/user/bookings" element={<MyBookings />} />
                 <Route path="/payment/success" element={<SuccessPage />} />
                 <Route path="/payment/cancel" element={<CancelPage />} />
+                <Route path="/fake-stripe" element={<FakeStripeCheckout />} />
 
                 {/* Auth Routes */}
                 <Route path="/login" element={<Login />} />
