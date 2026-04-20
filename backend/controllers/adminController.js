@@ -75,6 +75,7 @@ const updateUserRole = async (req, res) => {
         }
 
         user.role = req.body.role || user.role;
+        user.isAdmin = user.role === 'admin';
         const updatedUser = await user.save();
         
         res.json({
