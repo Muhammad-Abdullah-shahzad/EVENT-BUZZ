@@ -20,6 +20,7 @@ import FakeStripeCheckout from './pages/payment/FakeStripeCheckout';
 import ChatBot from './components/common/ChatBot';
 
 import HelpCenter from './pages/user/HelpCenter';
+import TicketPage from './pages/user/TicketPage';
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
                 <Route path="/payment/success" element={<SuccessPage />} />
                 <Route path="/payment/cancel" element={<CancelPage />} />
                 <Route path="/fake-stripe" element={<FakeStripeCheckout />} />
+                <Route path="/ticket/:id" element={<TicketPage />} />
 
                 {/* Auth Routes */}
                 <Route path="/login" element={<Login />} />

@@ -15,10 +15,16 @@ const cancelBooking = async (id) => {
     return response.data;
 };
 
+const getPublicTicket = async (id) => {
+    const response = await api.get(`/bookings/public/${id}`);
+    return response.data;
+};
+
 const bookingService = {
     createBooking,
     getMyBookings,
     cancelBooking,
+    getPublicTicket
 };
 
 export default bookingService;

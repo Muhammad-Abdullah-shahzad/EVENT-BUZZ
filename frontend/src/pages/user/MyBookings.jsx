@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Badge, Button, Spinner, Alert, Modal } from 'react-bootstrap';
-import { HiOutlineTicket, HiOutlineCalendar, HiOutlineLocationMarker, HiOutlineQrcode, HiOutlineCreditCard } from 'react-icons/hi';
+import { HiOutlineTicket, HiOutlineCalendar, HiOutlineLocationMarker, HiOutlineQrcode, HiOutlineCreditCard, HiOutlineExternalLink } from 'react-icons/hi';
 import Navbar from '../../components/common/Navbar';
 import bookingService from '../../services/bookingService';
 import paymentService from '../../services/paymentService';
@@ -10,9 +11,9 @@ const MyBookings = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [showPayModal, setShowPayModal] = useState(false);
-    const [showTicketModal, setShowTicketModal] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [processingPayment, setProcessingPayment] = useState(false);
+    const navigate = useNavigate();
 
     const fetchBookings = async () => {
         try {
@@ -87,8 +88,7 @@ const MyBookings = () => {
     };
 
     const handleViewTicket = (booking) => {
-        setSelectedBooking(booking);
-        setShowTicketModal(true);
+        navigate(`/ticket/${booking._id}`);
     };
 
     const confirmPayment = async () => {
@@ -219,41 +219,7 @@ const MyBookings = () => {
                     </Row>
                 )}
 
-                {/* Ticket Modal */}
-                <Modal show={showTicketModal} onHide={() => setShowTicketModal(false)} centered>
-                    <Modal.Body className="p-0 overflow-hidden rounded-xl">
-                        <div className="bg-gradient-main text-white p-4 text-center">
-                            <h4 className="fw-bold mb-1">Digital Ticket</h4>
-                            <p className="small mb-0 opacity-75">Show this QR at the venue</p>
-                        </div>
-                        <div className="p-5 text-center">
-                            <div className="bg-light p-3 rounded-xl d-inline-block border mb-4">
-                                <img src={selectedBooking?.qrCode} alt="Ticket QR" style={{ width: '200px' }} />
-                            </div>
-                            <h5 className="fw-bold mb-1">{selectedBooking?.event?.title}</h5>
-                            <p className="text-muted small mb-3">{selectedBooking?.bookingId}</p>
-                            <hr className="my-4 border-dashed" />
-                            <div className="d-flex justify-content-between text-start small">
-                                <div>
-                                    <span className="text-muted d-block">Attendee</span>
-                                    <span className="fw-bold">Abdullah</span>
-                                </div>
-                                <div className="text-end">
-                                    <span className="text-muted d-block">Tickets</span>
-                                    <span className="fw-bold">{selectedBooking?.tickets} Person(s)</span>
-                                </div>
-                            </div>
-                        </div>
-                            <div className="bg-light p-3 text-center">
-                                <Button variant="outline-dark" size="sm" className="rounded-pill px-4" onClick={() => window.print()}>
-                                    Print Ticket
-                                </Button>
-                                <Button variant="primary" size="sm" className="rounded-pill px-4 ms-2" onClick={handleShareTicket}>
-                                    Share QR code
-                                </Button>
-                            </div>
-                    </Modal.Body>
-                </Modal>
+
 
                 {/* Confirm Payment Modal */}
                 <Modal show={showPayModal} onHide={() => setShowPayModal(false)} centered>

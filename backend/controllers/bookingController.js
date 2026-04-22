@@ -40,18 +40,13 @@ const createBooking = async (req, res) => {
         const createdBooking = await booking.save();
         console.log('Booking saved:', createdBooking._id);
 
-        const qrData = JSON.stringify({
-            bookingId: createdBooking._id,
-            user: req.user.name,
-            event: event.title,
-            tickets: tickets,
-            status: paymentStatus
-        });
+        const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+        const ticketUrl = `${clientUrl}/ticket/${createdBooking._id}`;
 
-        const qrCode = await QRCode.toDataURL(qrData);
+        const qrCode = await QRCode.toDataURL(ticketUrl);
         createdBooking.qrCode = qrCode;
         await createdBooking.save();
-        console.log('QR Code generated and booking updated');
+        console.log('QR Code generated with URL and booking updated');
 
         // Increment ticketsSold ONLY for free events
         if (!event.isPaid) {
@@ -137,8 +132,28 @@ const cancelBooking = async (req, res) => {
     }
 };
 
+// @desc    Get public ticket info
+// @route   GET /api/bookings/public/:id
+// @access  Public
+const getPublicTicket = async (req, res) => {
+    try {
+        const booking = await Booking.findById(req.params.id)
+            .populate('event', 'title date venue image description startTime endTime')
+            .populate('user', 'name email');
+
+        if (!booking) {
+            return res.status(404).json({ message: 'Ticket not found' });
+        }
+
+        res.json(booking);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     createBooking,
     getMyBookings,
-    cancelBooking
+    cancelBooking,
+    getPublicTicket
 };
