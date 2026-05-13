@@ -7,7 +7,8 @@ const Booking = require('../models/Booking');
 // @access  Private/Admin
 const getStats = async (req, res) => {
     try {
-        const usersCount = await User.countDocuments();
+        const userQuery = req.user.role === 'superadmin' ? {} : { role: { $ne: 'superadmin' } };
+        const usersCount = await User.countDocuments(userQuery);
         const eventsCount = await Event.countDocuments({ status: 'approved' }); // Only approved events are "live"
         const pendingEventsCount = await Event.countDocuments({ status: 'pending' });
         const bookingsCount = await Booking.countDocuments();
@@ -16,12 +17,34 @@ const getStats = async (req, res) => {
         const completedBookings = await Booking.find({ paymentStatus: 'Completed' });
         const totalRevenue = completedBookings.reduce((acc, booking) => acc + (booking.totalAmount || 0), 0);
 
+        // Get breakdown by category
+        const bookingsByCategory = await Booking.aggregate([
+            {
+                $lookup: {
+                    from: 'events',
+                    localField: 'event',
+                    foreignField: '_id',
+                    as: 'eventData'
+                }
+            },
+            { $unwind: '$eventData' },
+            {
+                $group: {
+                    _id: '$eventData.category',
+                    count: { $sum: 1 },
+                    revenue: { $sum: '$totalAmount' }
+                }
+            },
+            { $sort: { count: -1 } }
+        ]);
+
         res.json({
             users: usersCount,
             events: eventsCount,
             pendingEvents: pendingEventsCount,
             bookings: bookingsCount,
-            revenue: totalRevenue
+            revenue: totalRevenue,
+            categoryBreakdown: bookingsByCategory
         });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -33,7 +56,8 @@ const getStats = async (req, res) => {
 // @access  Private/Admin
 const getUsers = async (req, res) => {
     try {
-        const users = await User.find({}).select('-password');
+        const query = req.user.role === 'superadmin' ? {} : { role: { $ne: 'superadmin' } };
+        const users = await User.find(query).select('-password');
         res.json(users);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -88,7 +112,7 @@ const updateUserRole = async (req, res) => {
         user.role = newRole || user.role;
         user.isAdmin = user.role === 'admin' || user.role === 'superadmin';
         const updatedUser = await user.save();
-        
+
         res.json({
             _id: updatedUser._id,
             name: updatedUser.name,
@@ -101,9 +125,47 @@ const updateUserRole = async (req, res) => {
     }
 };
 
+// @desc    Add new admin user
+// @route   POST /api/admin/users/admin
+// @access  Private/SuperAdmin
+const addAdmin = async (req, res) => {
+    const { name, email, password } = req.body;
+
+    try {
+        const userExists = await User.findOne({ email });
+
+        if (userExists) {
+            return res.status(400).json({ message: 'User already exists' });
+        }
+
+        const user = await User.create({
+            name,
+            email,
+            password,
+            role: 'admin',
+            isAdmin: true
+        });
+
+        if (user) {
+            res.status(201).json({
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            });
+        } else {
+            res.status(400).json({ message: 'Invalid user data' });
+        }
+    } catch (error) {
+        console.error('Add Admin Error:', error);
+        res.status(500).json({ message: 'Failed to add admin: ' + error.message });
+    }
+};
+
 module.exports = {
     getStats,
     getUsers,
     deleteUser,
-    updateUserRole
+    updateUserRole,
+    addAdmin
 };

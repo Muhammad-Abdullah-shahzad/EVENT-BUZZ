@@ -20,6 +20,11 @@ const updateUserRole = async (id, role) => {
     return response.data;
 };
 
+const addAdmin = async (adminData) => {
+    const response = await api.post('/admin/users/admin', adminData);
+    return response.data;
+};
+
 const getPendingEvents = async () => {
     const response = await api.get('/events/admin/pending');
     return response.data;
@@ -40,6 +45,7 @@ const adminService = {
     getUsers,
     deleteUser,
     updateUserRole,
+    addAdmin,
     getPendingEvents,
     approveEvent,
     rejectEvent,

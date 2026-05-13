@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { Container, Row, Col, Card, Table, Spinner, Badge, Alert, Button, Modal, Dropdown, Form } from 'react-bootstrap';
-import { HiOutlineUsers, HiOutlineCalendar, HiOutlineTicket, HiOutlineCurrencyDollar, HiOutlineDotsVertical, HiOutlineTrash, HiOutlineUserRemove, HiOutlineCheck, HiOutlineX, HiOutlineTrendingUp } from 'react-icons/hi';
+import { HiOutlineUsers, HiOutlineCalendar, HiOutlineTicket, HiOutlineCurrencyDollar, HiOutlineDotsVertical, HiOutlineTrash, HiOutlineUserRemove, HiOutlineCheck, HiOutlineX, HiOutlineTrendingUp, HiOutlineUserAdd } from 'react-icons/hi';
 import Navbar from '../../components/common/Navbar';
 import adminService from '../../services/adminService';
 import AuthContext from '../../context/AuthContext';
@@ -22,6 +22,10 @@ const AdminDashboard = () => {
     const [rejectReason, setRejectReason] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
 
+    // Add Admin Modal State
+    const [showAddAdminModal, setShowAddAdminModal] = useState(false);
+    const [adminData, setAdminData] = useState({ name: '', email: '', password: '' });
+
     const fetchData = async () => {
         setLoading(true);
         setError('');
@@ -42,7 +46,8 @@ const AdminDashboard = () => {
                 events: statsData?.events || 0,
                 bookings: statsData?.bookings || 0,
                 revenue: statsData?.revenue || 0,
-                pendingEvents: pendingData?.length || statsData?.pendingEvents || 0
+                pendingEvents: pendingData?.length || statsData?.pendingEvents || 0,
+                categoryBreakdown: statsData?.categoryBreakdown || []
             });
             setUsers(Array.isArray(usersData) ? usersData : []);
             setPendingEvents(Array.isArray(pendingData) ? pendingData : []);
@@ -86,6 +91,21 @@ const AdminDashboard = () => {
             fetchData();
         } catch (err) {
             alert(err.response?.data?.message || 'Failed to update role');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleAddAdmin = async (e) => {
+        e.preventDefault();
+        setActionLoading(true);
+        try {
+            await adminService.addAdmin(adminData);
+            setShowAddAdminModal(false);
+            setAdminData({ name: '', email: '', password: '' });
+            fetchData();
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to add admin');
         } finally {
             setActionLoading(false);
         }
@@ -206,12 +226,67 @@ const AdminDashboard = () => {
                     </Col>
                 </Row>
 
+                {/* Category Breakdown Section */}
+                <Row className="mb-5">
+                    <Col md={12}>
+                        <Card className="card-custom border-0 shadow-sm overflow-hidden">
+                            <Card.Header className="bg-white border-0 py-4 px-4">
+                                <h4 className="fw-bold mb-0">Bookings by Category</h4>
+                            </Card.Header>
+                            <Card.Body className="p-0">
+                                <Table hover responsive className="mb-0">
+                                    <thead className="bg-light">
+                                        <tr>
+                                            <th className="ps-4">Category</th>
+                                            <th className="text-center">Total Bookings</th>
+                                            <th className="text-end pe-4">Revenue</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {stats.categoryBreakdown && stats.categoryBreakdown.length > 0 ? (
+                                            stats.categoryBreakdown.map((item, index) => (
+                                                <tr key={index} className="align-middle">
+                                                    <td className="ps-4 fw-bold">{item._id || 'Uncategorized'}</td>
+                                                    <td className="text-center">
+                                                        <Badge bg="info" className="bg-opacity-10 text-info border border-info border-opacity-25 rounded-pill px-3">
+                                                            {item.count}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="text-end pe-4 fw-bold text-success">
+                                                        Rs. {(item.revenue || 0).toLocaleString()}
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="3" className="text-center py-4 text-muted">No breakdown data available</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </Table>
+                            </Card.Body>
+                        </Card>
+                    </Col>
+                </Row>
+
                 {/* Registered Users Section */}
                 <div id="registered-users" className="mb-5">
                     <Card className="card-custom border-0 shadow-sm overflow-hidden">
                         <Card.Header className="bg-white border-0 py-4 px-4 d-flex justify-content-between align-items-center">
-                            <h4 className="fw-bold mb-0">Registered Users</h4>
-                            <Badge bg="primary" pill>{users.length} Users</Badge>
+                            <div className="d-flex align-items-center gap-3">
+                                <h4 className="fw-bold mb-0">Registered Users</h4>
+                                <Badge bg="primary" pill>{users.length} Users</Badge>
+                            </div>
+                            {currentUser?.role === 'superadmin' && (
+                                <Button 
+                                    variant="primary" 
+                                    size="sm" 
+                                    className="rounded-pill px-3 shadow-sm"
+                                    onClick={() => setShowAddAdminModal(true)}
+                                >
+                                    <HiOutlineUserAdd className="me-1" /> Add Admin
+                                </Button>
+                            )}
                         </Card.Header>
                         <Table hover responsive className="mb-0">
                             <thead className="bg-light">
@@ -410,6 +485,56 @@ const AdminDashboard = () => {
                             Confirm Rejection
                         </Button>
                     </Modal.Footer>
+                </Modal>
+
+                {/* Add Admin Modal */}
+                <Modal show={showAddAdminModal} onHide={() => setShowAddAdminModal(false)} centered>
+                    <Modal.Header closeButton className="border-0">
+                        <Modal.Title className="fw-bold">Add New Admin</Modal.Title>
+                    </Modal.Header>
+                    <Form onSubmit={handleAddAdmin}>
+                        <Modal.Body>
+                            <Form.Group className="mb-3">
+                                <Form.Label className="small fw-bold text-muted">NAME</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    placeholder="Enter full name"
+                                    value={adminData.name}
+                                    onChange={(e) => setAdminData({ ...adminData, name: e.target.value })}
+                                    required
+                                    className="rounded-lg shadow-sm"
+                                />
+                            </Form.Group>
+                            <Form.Group className="mb-3">
+                                <Form.Label className="small fw-bold text-muted">EMAIL ADDRESS</Form.Label>
+                                <Form.Control
+                                    type="email"
+                                    placeholder="admin@eventbuzz.com"
+                                    value={adminData.email}
+                                    onChange={(e) => setAdminData({ ...adminData, email: e.target.value })}
+                                    required
+                                    className="rounded-lg shadow-sm"
+                                />
+                            </Form.Group>
+                            <Form.Group className="mb-3">
+                                <Form.Label className="small fw-bold text-muted">PASSWORD</Form.Label>
+                                <Form.Control
+                                    type="password"
+                                    placeholder="Enter secure password"
+                                    value={adminData.password}
+                                    onChange={(e) => setAdminData({ ...adminData, password: e.target.value })}
+                                    required
+                                    className="rounded-lg shadow-sm"
+                                />
+                            </Form.Group>
+                        </Modal.Body>
+                        <Modal.Footer className="border-0 px-4 pb-4">
+                            <Button variant="light" className="flex-grow-1 rounded-pill" onClick={() => setShowAddAdminModal(false)}>Cancel</Button>
+                            <Button variant="primary" type="submit" className="flex-grow-1 rounded-pill shadow-sm" disabled={actionLoading}>
+                                {actionLoading ? <Spinner size="sm" /> : 'Create Admin Account'}
+                            </Button>
+                        </Modal.Footer>
+                    </Form>
                 </Modal>
             </Container>
         </div>
