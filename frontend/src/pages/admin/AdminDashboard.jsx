@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Container, Row, Col, Card, Table, Spinner, Badge, Alert, Button, Modal, Dropdown, Form } from 'react-bootstrap';
 import { HiOutlineUsers, HiOutlineCalendar, HiOutlineTicket, HiOutlineCurrencyDollar, HiOutlineDotsVertical, HiOutlineTrash, HiOutlineUserRemove, HiOutlineCheck, HiOutlineX, HiOutlineTrendingUp } from 'react-icons/hi';
 import Navbar from '../../components/common/Navbar';
 import adminService from '../../services/adminService';
+import AuthContext from '../../context/AuthContext';
 
 const AdminDashboard = () => {
+    const { user: currentUser } = useContext(AuthContext);
     const [stats, setStats] = useState({ users: 0, events: 0, bookings: 0, revenue: 0 });
     const [users, setUsers] = useState([]);
     const [pendingEvents, setPendingEvents] = useState([]);
@@ -230,7 +232,7 @@ const AdminDashboard = () => {
                                         </td>
                                         <td>{user.email}</td>
                                         <td>
-                                            <Badge bg={user.role === 'admin' ? 'danger' : user.role === 'organizer' ? 'info' : 'secondary'} className="rounded-pill px-3">
+                                            <Badge bg={user.role === 'superadmin' ? 'warning' : user.role === 'admin' ? 'danger' : user.role === 'organizer' ? 'info' : 'secondary'} text={user.role === 'superadmin' ? 'dark' : 'white'} className="rounded-pill px-3">
                                                 {(user.role || 'user').toUpperCase()}
                                             </Badge>
                                         </td>
@@ -244,9 +246,23 @@ const AdminDashboard = () => {
                                                     <Dropdown.Header className="small fw-bold">UPDATE ROLE</Dropdown.Header>
                                                     <Dropdown.Item onClick={() => handleRoleChange(user._id, 'user')} disabled={user.role === 'user'}>Make User</Dropdown.Item>
                                                     <Dropdown.Item onClick={() => handleRoleChange(user._id, 'organizer')} disabled={user.role === 'organizer'}>Make Organizer</Dropdown.Item>
-                                                    <Dropdown.Item onClick={() => handleRoleChange(user._id, 'admin')} disabled={user.role === 'admin'}>Make Admin</Dropdown.Item>
+                                                    
+                                                    {currentUser?.role === 'superadmin' && (
+                                                        <>
+                                                            <Dropdown.Item onClick={() => handleRoleChange(user._id, 'admin')} disabled={user.role === 'admin'}>Make Admin</Dropdown.Item>
+                                                            <Dropdown.Item onClick={() => handleRoleChange(user._id, 'superadmin')} disabled={user.role === 'superadmin'}>Make Super Admin</Dropdown.Item>
+                                                        </>
+                                                    )}
+                                                    
                                                     <Dropdown.Divider />
-                                                    <Dropdown.Item className="text-danger" onClick={() => handleDeleteClick(user)} disabled={user.role === 'admin'}>
+                                                    <Dropdown.Item 
+                                                        className="text-danger" 
+                                                        onClick={() => handleDeleteClick(user)} 
+                                                        disabled={
+                                                            user.role === 'superadmin' || 
+                                                            (user.role === 'admin' && currentUser?.role !== 'superadmin')
+                                                        }
+                                                    >
                                                         <HiOutlineTrash className="me-2" /> Delete Account
                                                     </Dropdown.Item>
                                                 </Dropdown.Menu>

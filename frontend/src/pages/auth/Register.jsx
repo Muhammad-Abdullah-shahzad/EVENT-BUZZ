@@ -130,7 +130,7 @@ const Register = () => {
                                             >
                                                 <option value="user">Attendee / Discovery User</option>
                                                 <option value="organizer">Event Organizer</option>
-                                                <option value="admin">System Administrator</option>
+
                                             </Form.Select>
                                         </div>
                                     </Form.Group>

@@ -20,7 +20,7 @@ const registerUser = async (req, res) => {
             name,
             email,
             password,
-            role
+            role: (role === 'admin' || role === 'superadmin') ? 'user' : (role || 'user')
         });
 
         if (user) {
@@ -28,7 +28,7 @@ const registerUser = async (req, res) => {
             const refreshToken = generateRefreshToken(user._id);
 
             // Notify admins and organizers about new user
-            const adminsAndOrganizers = await User.find({ role: { $in: ['admin', 'organizer'] } });
+            const adminsAndOrganizers = await User.find({ role: { $in: ['admin', 'organizer', 'superadmin'] } });
             for (const staff of adminsAndOrganizers) {
                 await createNotification(
                     staff._id,

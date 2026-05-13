@@ -46,14 +46,14 @@ function App() {
                 <Route path="/register" element={<Register />} />
 
                 {/* Organizer Routes */}
-                <Route element={<ProtectedRoute allowedRoles={['organizer', 'admin']} />}>
+                <Route element={<ProtectedRoute allowedRoles={['organizer', 'admin', 'superadmin']} />}>
                   <Route path="/organizer/dashboard" element={<OrganizerDashboard />} />
                   <Route path="/organizer/create-event" element={<CreateEvent />} />
                   <Route path="/organizer/edit-event/:id" element={<EditEvent />} />
                 </Route>
 
                 {/* Admin Routes */}
-                <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+                <Route element={<ProtectedRoute allowedRoles={['admin', 'superadmin']} />}>
                   <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 </Route>
               </Routes>

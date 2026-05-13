@@ -51,8 +51,12 @@ const deleteUser = async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        if (user.role === 'admin') {
-            return res.status(400).json({ message: 'Cannot delete admin user' });
+        if (user.role === 'superadmin') {
+            return res.status(403).json({ message: 'Cannot delete super admin user' });
+        }
+
+        if (user.role === 'admin' && req.user.role !== 'superadmin') {
+            return res.status(403).json({ message: 'Only super admin can delete admin users' });
         }
 
         await User.findByIdAndDelete(req.params.id);
@@ -74,8 +78,15 @@ const updateUserRole = async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        user.role = req.body.role || user.role;
-        user.isAdmin = user.role === 'admin';
+        const newRole = req.body.role;
+
+        // Only super admin can assign admin or superadmin roles
+        if ((newRole === 'admin' || newRole === 'superadmin') && req.user.role !== 'superadmin') {
+            return res.status(403).json({ message: 'Only super admin can assign admin or super admin roles' });
+        }
+
+        user.role = newRole || user.role;
+        user.isAdmin = user.role === 'admin' || user.role === 'superadmin';
         const updatedUser = await user.save();
         
         res.json({

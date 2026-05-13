@@ -188,7 +188,7 @@ const Navbar = () => {
                                     </>
                                 )}
 
-                                {user.role === 'admin' && (
+                                {(user.role === 'admin' || user.role === 'superadmin') && (
                                     <Nav.Link as={Link} to="/admin/dashboard" className="fw-semibold px-3 text-nowrap">
                                         <HiOutlineChartBar className="me-1" /> {t('adminPanel')}
                                     </Nav.Link>
